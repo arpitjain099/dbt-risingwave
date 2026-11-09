@@ -21,8 +21,17 @@ class RisingWaveIndexConfig(RelationConfigBase, RelationConfigValidationMixin):
 
     name: str = field(default="", hash=False, compare=False)
     column_names: tuple[str, ...] = field(default_factory=tuple, hash=True)
-    include_columns: tuple[str, ...] = field(default_factory=tuple, hash=True)
-    distributed_by_columns: tuple[str, ...] = field(default_factory=tuple, hash=True)
+    # risingwave__get_show_indexes_sql stops at indnkeyatts, so an index read
+    # back from the catalog only ever carries its key columns. Comparing these
+    # two makes every index declared with `include` or `distributed_by` look
+    # dropped and recreated on each run. They are still used to build the
+    # `create index` statement, see as_node_config below.
+    include_columns: tuple[str, ...] = field(
+        default_factory=tuple, hash=False, compare=False
+    )
+    distributed_by_columns: tuple[str, ...] = field(
+        default_factory=tuple, hash=False, compare=False
+    )
 
     @property
     def validation_rules(self) -> Set[RelationConfigValidationRule]:
